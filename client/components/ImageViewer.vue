@@ -11,9 +11,12 @@
           <h3 class="text-lg font-semibold">Original Image</h3>
           <img :src="imageApi.getImageUrl(uuid, 'original')" class="w-full max-w-2xl rounded-lg shadow-lg mx-auto"
             alt="Original" />
-          <div class="flex justify-center">
+          <div class="flex justify-center space-x-4">
             <UButton @click="detectRegions" :loading="detectingRegions" :disabled="detectingRegions">
               Detect Regions
+            </UButton>
+            <UButton @click="deleteOriginalImage" color="red">
+              Delete Image
             </UButton>
           </div>
         </div>
@@ -85,6 +88,10 @@
 <script setup lang="ts">
 const props = defineProps<{
   uuid: string
+}>()
+
+const emit = defineEmits<{
+  'delete-image': [uuid: string]
 }>()
 
 import {saveAs} from 'file-saver';
@@ -374,6 +381,16 @@ const deleteCropped = async (index: number) => {
     console.error('Deletion failed:', error)
   } finally {
     deletingIndex.value = null
+  }
+}
+
+const deleteOriginalImage = async () => {
+  try {
+    await imageApi.deleteImage(props.uuid)
+    croppedImages.value = []
+    emit('delete-image', props.uuid)
+  } catch (error) {
+    console.error('Deletion failed:', error)
   }
 }
 

@@ -1,7 +1,7 @@
 <!-- pages/index.vue -->
 <template>
   <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-8">Image Processing App</h1>
+    <h1 class="text-3xl font-bold mb-8">Digitalize Your Photos</h1>
     
     <div class="space-y-8">
       <!-- Upload Section -->
@@ -21,7 +21,7 @@
           :key="uuid"
           class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg"
         >
-          <ImageViewer :uuid="uuid" />
+          <ImageViewer :uuid="uuid" @delete-image="deleteImage" />
         </div>
       </div>
     </div>
@@ -40,5 +40,9 @@ const handleUploadComplete = async (uuids: string[]) => {
 onMounted(async () => {
   processedImages.value = await imageApi.getImages()
 })
+
+const deleteImage = async (uuid: string) => {
+  processedImages.value = processedImages.value.filter((id) => id !== uuid)
+}
 
 </script>
