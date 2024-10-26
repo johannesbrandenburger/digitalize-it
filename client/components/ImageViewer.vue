@@ -134,7 +134,7 @@ const adjustZoom = (delta: number) => {
 }
 
 const handleWheel = (e: WheelEvent) => {
-  const delta = e.deltaY > 0 ? -0.1 : 0.1
+  const delta = e.deltaY > 0 ? -0.01 : 0.01
   adjustZoom(delta)
 }
 
@@ -291,8 +291,9 @@ const handleCrop = async () => {
 const rotateCropped = async (index: number) => {
   rotatingIndex.value = index
   try {
+    croppedImages.value = []
     await imageApi.rotateCroppedImage(props.uuid, index)
-    croppedImages.value = [...croppedImages.value]
+    await loadCroppedImages()
   } catch (error) {
     console.error('Rotation failed:', error)
   } finally {

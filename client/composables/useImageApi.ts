@@ -47,9 +47,9 @@ export const useImageApi = () => {
     
     const getImageUrl = (uuid: string, type: 'original' | 'cropped', index?: number) => {
       if (type === 'original') {
-        return `${config.public.apiBase}/image/${uuid}/original`
+        return `${config.public.apiBase}/image/${uuid}/original?random=${Date.now()}`
       }
-      return `${config.public.apiBase}/image/${uuid}/cropped/${index}`
+      return `${config.public.apiBase}/image/${uuid}/cropped/${index}?random=${Date.now()}`
     }
     
     return {
