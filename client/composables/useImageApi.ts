@@ -11,6 +11,11 @@ export const useImageApi = () => {
       })
       return await response.json()
     }
+
+    const getImages = async () => {
+      const response = await fetch(`${config.public.apiBase}/images`)
+      return await response.json()
+    }
     
     const getRegions = async (uuid: string) => {
       const response = await fetch(`${config.public.apiBase}/image/${uuid}/regions`)
@@ -49,6 +54,7 @@ export const useImageApi = () => {
     
     return {
       uploadImages,
+      getImages,
       getRegions,
       cropRegions,
       getCroppedImages,

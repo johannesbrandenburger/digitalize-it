@@ -160,6 +160,10 @@ def rotate_image(image_path: str):
 async def read_root() -> Union[str, dict]:
     return "The API is up and running"
 
+@app.get("/images")
+async def list_images() -> List[str]:
+    return os.listdir(DATA_DIR)
+
 @app.post("/upload", response_model=UUIDResponse)
 async def upload_images(files: List[UploadFile] = File(...)) -> UUIDResponse:
     uuids = []

@@ -30,8 +30,15 @@
 
 <script setup lang="ts">
 const processedImages = ref<string[]>([])
+const imageApi = useImageApi()
 
 const handleUploadComplete = (uuids: string[]) => {
   processedImages.value = [...uuids, ...processedImages.value]
 }
+
+// load the already existing images from the server
+onMounted(async () => {
+  processedImages.value = await imageApi.getImages()
+})
+
 </script>
