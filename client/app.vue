@@ -28,6 +28,17 @@
 </template>
 
 <script setup lang="ts">
+
+useHead({
+  title: 'Digitalize it!',
+  meta: [
+    {
+      name: 'description',
+      content: 'Digitalize your photos with ease'
+    }
+  ]
+})
+
 const processedImages = ref<string[]>([])
 const imageApi = useImageApi()
 
