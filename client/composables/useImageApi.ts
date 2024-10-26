@@ -44,6 +44,13 @@ export const useImageApi = () => {
       })
       return await response.json()
     }
+
+    const deleteCroppedImage = async (uuid: string, index: number) => {
+      const response = await fetch(`${config.public.apiBase}/image/${uuid}/cropped/${index}`, {
+        method: 'DELETE'
+      })
+      return await response.json()
+    }
     
     const getImageUrl = (uuid: string, type: 'original' | 'cropped', index?: number) => {
       if (type === 'original') {
@@ -59,6 +66,7 @@ export const useImageApi = () => {
       cropRegions,
       getCroppedImages,
       rotateCroppedImage,
+      deleteCroppedImage,
       getImageUrl
     }
   }

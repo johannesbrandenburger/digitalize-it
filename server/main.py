@@ -222,3 +222,19 @@ async def rotate_cropped_image(uuid: str, index: int):
     
     rotate_image(image_path)
     return {"status": "success"}
+
+@app.delete("/image/{uuid}")
+async def delete_image(uuid: str):
+    dir_path = os.path.join(DATA_DIR, uuid)
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+    
+    return {"status": "success"}
+
+@app.delete("/image/{uuid}/cropped/{index}")
+async def delete_cropped_image(uuid: str, index: int):
+    image_path = os.path.join(DATA_DIR, uuid, f"cropped_{index}.jpg")
+    if os.path.exists(image_path):
+        os.remove(image_path)
+    
+    return {"status": "success"}

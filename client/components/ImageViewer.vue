@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div v-if="loading" class="flex justify-center">
-      <USpinner />
+      <!-- <USpinner /> -->
     </div>
 
     <template v-else>
@@ -26,8 +26,12 @@
               <img :src="imageApi.getImageUrl(uuid, 'cropped', index)" class="w-full rounded-lg shadow-lg"
                 :alt="`Cropped ${index + 1}`" />
               <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <UButton @click="rotateCropped(index)" icon="i-heroicons-arrow-path" color="white" variant="solid"
+                <UButton @click="rotateCropped(index)" icon="i-heroicons-arrow-path" color="white" variant="solid" class="mr-2"
                   :loading="rotatingIndex === index" />
+                <UButton @click="deleteCropped(index)" icon="i-heroicons-trash" color="white" variant="solid" class="mr-2"
+                  :loading="deletingIndex === index" />
+                <UButton @click="downloadCropped(index)" icon="i-heroicons-arrow-down-tray" color="white" variant="solid"
+                  :loading="downloadingIndex === index" />
               </div>
             </div>
           </div>
@@ -79,16 +83,19 @@ const props = defineProps<{
   uuid: string
 }>()
 
+import {saveAs} from 'file-saver';
+
 const imageApi = useImageApi()
 const loading = ref(true)
 const detectingRegions = ref(false)
 const cropping = ref(false)
 const showRegions = ref(false)
 const rotatingIndex = ref<number | null>(null)
+const deletingIndex = ref<number | null>(null)
+const downloadingIndex = ref<number | null>(null)
 const regions = ref<any[]>([])
 const croppedImages = ref<string[]>([])
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-
 const isDragging = ref(false)
 const selectedPoint = ref<{ regionIndex: number; pointIndex: number } | null>(null)
 const originalImage = ref<HTMLImageElement | null>(null)
@@ -332,6 +339,31 @@ const rotateCropped = async (index: number) => {
     console.error('Rotation failed:', error)
   } finally {
     rotatingIndex.value = null
+  }
+}
+
+const deleteCropped = async (index: number) => {
+  deletingIndex.value = index
+  try {
+    croppedImages.value = []
+    await imageApi.deleteCroppedImage(props.uuid, index)
+    await loadCroppedImages()
+  } catch (error) {
+    console.error('Deletion failed:', error)
+  } finally {
+    deletingIndex.value = null
+  }
+}
+
+const downloadCropped = async (index: number) => {
+  downloadingIndex.value = index
+  try {
+    const blob = await fetch(imageApi.getImageUrl(props.uuid, 'cropped', index)).then(res => res.blob())
+    saveAs(blob, `${props.uuid}-cropped-${index + 1}.png`)
+  } catch (error) {
+    console.error('Download failed:', error)
+  } finally {
+    downloadingIndex.value = null
   }
 }
 </script>
