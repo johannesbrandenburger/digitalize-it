@@ -139,7 +139,7 @@ const error = ref<string | null>(null)
 const imageApi = useImageApi()
 
 const MAX_FILE_SIZE = props.maxFileSize || 10 * 1024 * 1024 // 10MB
-const MAX_FILES = props.maxFiles || 10
+const MAX_FILES = props.maxFiles || 1024
 
 // Utility functions
 const formatFileSize = (bytes: number): string => {

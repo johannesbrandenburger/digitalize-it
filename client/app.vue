@@ -10,7 +10,6 @@
         <FileUpload 
           @upload-complete="handleUploadComplete"
           :max-file-size="10 * 1024 * 1024"
-          :max-files="10"
         />
       </div>
       
