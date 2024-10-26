@@ -35,7 +35,7 @@
       </div>
 
       <!-- Regions Overlay -->
-      <UModal v-model="showRegions" size="7xl">
+      <UModal v-model="showRegions" size="9xl">
         <div class="p-6">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold">Adjust Regions</h3>
@@ -47,10 +47,10 @@
           </div>
 
           <div class="relative overflow-auto bg-gray-100 rounded-lg" style="height: 75vh">
-            <div class="relative" :style="{ transform: `scale(${zoom})`, transformOrigin: 'top left' }">
+            <div class="relative" :style="{ transform: `scale(${zoom})`, transformOrigin: 'top left' }" ref="containerRef">
               <canvas ref="canvasRef" class="rounded-lg cursor-move" @mousedown="handleMouseDown"
                 @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp"
-                @wheel.prevent="handleWheel" />
+                @wheel="handleWheel" />
             </div>
           </div>
 
@@ -89,19 +89,43 @@ const regions = ref<any[]>([])
 const croppedImages = ref<string[]>([])
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
-// New refs for region editing
 const isDragging = ref(false)
 const selectedPoint = ref<{ regionIndex: number; pointIndex: number } | null>(null)
 const originalImage = ref<HTMLImageElement | null>(null)
-const zoom = ref(1)
+const zoom = ref(0.2)
+const initialZoom = ref(1)
 const isPanning = ref(false)
 const lastPanPoint = ref<{ x: number; y: number } | null>(null)
 const canvasContainer = ref<HTMLDivElement | null>(null)
+const containerRef = ref<HTMLDivElement | null>(null)
 
 onMounted(async () => {
   await loadCroppedImages()
   loading.value = false
 })
+
+const calculateInitialZoom = () => {
+  if (!containerRef.value || !originalImage.value) return 1
+
+  const container = containerRef.value
+  const image = originalImage.value
+
+  // Get container dimensions (accounting for padding)
+  const containerWidth = container.clientWidth - 48 // 24px padding on each side
+  const containerHeight = container.clientHeight - 48
+
+  // Calculate zoom ratios for both dimensions
+  const widthRatio = containerWidth / image.width
+  const heightRatio = containerHeight / image.height
+
+  // Use the smaller ratio to ensure the image fits in both dimensions
+  return Math.min(widthRatio, heightRatio, 1) // Cap at 1 to prevent upscaling
+}
+
+const resetZoom = () => {
+  zoom.value = initialZoom.value
+  drawRegions()
+}
 
 const loadCroppedImages = async () => {
   try {
@@ -134,7 +158,13 @@ const adjustZoom = (delta: number) => {
 }
 
 const handleWheel = (e: WheelEvent) => {
-  const delta = e.deltaY > 0 ? -0.01 : 0.01
+
+  // only zoom in/out if the meta key is pressed
+  if (!e.metaKey) return
+
+  e.preventDefault()
+
+  const delta = e.deltaY > 0 ? -0.03 : 0.03
   adjustZoom(delta)
 }
 
@@ -218,7 +248,11 @@ const drawRegions = async () => {
   if (!originalImage.value) {
     originalImage.value = new Image()
     originalImage.value.src = imageApi.getImageUrl(props.uuid, 'original')
-    originalImage.value.onload = () => drawRegionsOnCanvas(ctx, canvas)
+    originalImage.value.onload = () => {
+      drawRegionsOnCanvas(ctx, canvas)
+      initialZoom.value = calculateInitialZoom()
+      resetZoom()
+    }
   } else {
     drawRegionsOnCanvas(ctx, canvas)
   }
@@ -247,13 +281,13 @@ const drawRegionsOnCanvas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEl
 
     ctx.closePath()
     ctx.strokeStyle = '#00ff00'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 5
     ctx.stroke()
 
     // Draw points
     region.forEach(([x, y], pointIndex) => {
       ctx.beginPath()
-      ctx.arc(x, y, 5, 0, Math.PI * 2)
+      ctx.arc(x, y, 10, 0, Math.PI * 2)
 
       // Highlight selected point
       if (selectedPoint.value?.regionIndex === index &&
