@@ -2,7 +2,18 @@
 
 A web app to scan an old photo album and extract the photos from it.
 
-## Installation and Setup
+## Docker
+
+To run the app using Docker Compose, run the following command:
+
+```bash
+docker compose up
+```
+
+The app will be available at `http://localhost:3000`.
+(And the API will be available at `http://localhost:8000`)
+
+## Manual Installation and Setup
 
 ### Python Backend
 ```bash

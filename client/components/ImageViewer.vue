@@ -94,7 +94,8 @@ const emit = defineEmits<{
   'delete-image': [uuid: string]
 }>()
 
-import {saveAs} from 'file-saver';
+import pkg from 'file-saver';
+const { saveAs } = pkg;
 
 const imageApi = useImageApi()
 const loading = ref(true)
@@ -303,7 +304,7 @@ const drawRegionsOnCanvas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEl
     ctx.beginPath()
     ctx.moveTo(region[0][0], region[0][1])
 
-    region.slice(1).forEach(point => {
+    region.slice(1).forEach((point: number[]) => {
       ctx.lineTo(point[0], point[1])
     })
 
@@ -313,7 +314,7 @@ const drawRegionsOnCanvas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEl
     ctx.stroke()
 
     // Draw points
-    region.forEach(([x, y], pointIndex) => {
+    region.forEach(([x, y]: any, pointIndex: number) => {
       ctx.beginPath()
       ctx.arc(x, y, 10, 0, Math.PI * 2)
 
@@ -329,8 +330,8 @@ const drawRegionsOnCanvas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEl
     })
 
     // Add region number
-    const centerX = region.reduce((sum, point) => sum + point[0], 0) / region.length
-    const centerY = region.reduce((sum, point) => sum + point[1], 0) / region.length
+    const centerX = region.reduce((sum: any, point: any[]) => sum + point[0], 0) / region.length
+    const centerY = region.reduce((sum: any, point: any[]) => sum + point[1], 0) / region.length
     ctx.fillStyle = '#00ff00'
     ctx.font = '20px Arial'
     ctx.fillText((index + 1).toString(), centerX, centerY)
