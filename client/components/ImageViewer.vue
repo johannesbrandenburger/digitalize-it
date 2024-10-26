@@ -39,7 +39,7 @@
       </div>
 
       <!-- Regions Overlay -->
-      <UModal v-model="showRegions" size="9xl">
+      <UModal v-model="showRegions" fullscreen>
         <div class="p-6">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold">Adjust Regions</h3>
@@ -54,14 +54,18 @@
             <div class="relative" :style="{ transform: `scale(${zoom})`, transformOrigin: 'top left' }" ref="containerRef">
               <canvas ref="canvasRef" class="rounded-lg cursor-move" @mousedown="handleMouseDown"
                 @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp"
-                @wheel="handleWheel" />
+                @wheel="handleWheel" @contextmenu.prevent="addRegionOnSecondaryClick"
+              />
             </div>
           </div>
 
           <div class="mt-4">
-            <div class="text-sm text-gray-500 mb-4">
-              Drag points to adjust regions • Use mouse wheel or buttons to zoom • Move canvas by dragging empty space
-            </div>
+            <UButton @click="resetZoom" color="gray" size="sm" class="mr-4">
+              Reset Zoom
+            </UButton>
+            <UButton @click="addRegion" color="gray" size="sm">
+              Add Region
+            </UButton>
 
             <div class="flex justify-end space-x-4">
               <UButton @click="showRegions = false" color="gray">
@@ -173,6 +177,16 @@ const handleWheel = (e: WheelEvent) => {
 
   const delta = e.deltaY > 0 ? -0.03 : 0.03
   adjustZoom(delta)
+}
+
+const addRegionOnSecondaryClick = (e: MouseEvent) => {
+  if (e.button === 2) {
+    e.preventDefault()
+    const point = getCanvasPoint(e)
+    if (point) {
+      addRegion(point)
+    }
+  }
 }
 
 const getCanvasPoint = (e: MouseEvent) => {
@@ -365,5 +379,10 @@ const downloadCropped = async (index: number) => {
   } finally {
     downloadingIndex.value = null
   }
+}
+
+const addRegion = (startPoint = { x: 0, y: 0 }) => {
+  regions.value.push([ [startPoint.x, startPoint.y], [startPoint.x + 50, startPoint.y], [startPoint.x + 50, startPoint.y + 50], [startPoint.x, startPoint.y + 50] ])
+  drawRegions()
 }
 </script>
