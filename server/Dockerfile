@@ -17,4 +17,4 @@ RUN pip install "fastapi[standard]"
 COPY . /code/
 
 
-CMD ["fastapi", "run", "main.py", "--port", "8080"]
+CMD ["fastapi", "run", "main.py", "--port", "8000"]
