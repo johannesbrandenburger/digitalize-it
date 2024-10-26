@@ -1,190 +1,302 @@
 <template>
-    <div class="space-y-6">
-      <div v-if="loading" class="flex justify-center">
-        <USpinner />
-      </div>
-      
-      <template v-else>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Original Image -->
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold">Original Image</h3>
-            <img
-              :src="imageApi.getImageUrl(uuid, 'original')"
-              class="w-full rounded-lg shadow-lg"
-              alt="Original"
-            />
-            <UButton
-              @click="detectRegions"
-              :loading="detectingRegions"
-              :disabled="detectingRegions"
-            >
+  <div class="space-y-6">
+    <div v-if="loading" class="flex justify-center">
+      <USpinner />
+    </div>
+
+    <template v-else>
+      <div class="space-y-4">
+        <!-- Original Image -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold">Original Image</h3>
+          <img :src="imageApi.getImageUrl(uuid, 'original')" class="w-full max-w-2xl rounded-lg shadow-lg mx-auto"
+            alt="Original" />
+          <div class="flex justify-center">
+            <UButton @click="detectRegions" :loading="detectingRegions" :disabled="detectingRegions">
               Detect Regions
             </UButton>
           </div>
-          
-          <!-- Cropped Images -->
-          <div v-if="croppedImages.length" class="space-y-4">
-            <h3 class="text-lg font-semibold">Cropped Images</h3>
-            <div class="space-y-4">
-              <div
-                v-for="(image, index) in croppedImages"
-                :key="index"
-                class="relative group"
-              >
-                <img
-                  :src="imageApi.getImageUrl(uuid, 'cropped', index)"
-                  class="w-full rounded-lg shadow-lg"
-                  :alt="`Cropped ${index + 1}`"
-                />
-                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <UButton
-                    @click="rotateCropped(index)"
-                    icon="i-heroicons-arrow-path"
-                    color="white"
-                    variant="solid"
-                    :loading="rotatingIndex === index"
-                  />
-                </div>
+        </div>
+
+        <!-- Cropped Images -->
+        <div v-if="croppedImages.length" class="space-y-4">
+          <h3 class="text-lg font-semibold">Cropped Images</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="(image, index) in croppedImages" :key="index" class="relative group">
+              <img :src="imageApi.getImageUrl(uuid, 'cropped', index)" class="w-full rounded-lg shadow-lg"
+                :alt="`Cropped ${index + 1}`" />
+              <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <UButton @click="rotateCropped(index)" icon="i-heroicons-arrow-path" color="white" variant="solid"
+                  :loading="rotatingIndex === index" />
               </div>
             </div>
           </div>
         </div>
-        
-        <!-- Regions Overlay -->
-        <UModal v-model="showRegions">
-          <div class="p-4">
-            <h3 class="text-lg font-semibold mb-4">Detected Regions</h3>
-            <canvas
-              ref="canvasRef"
-              class="w-full rounded-lg"
-            />
-            <div class="mt-4 flex justify-end space-x-4">
-              <UButton
-                @click="showRegions = false"
-                color="gray"
-              >
+      </div>
+
+      <!-- Regions Overlay -->
+      <UModal v-model="showRegions" size="7xl">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Adjust Regions</h3>
+            <div class="flex space-x-2 items-center">
+              <span class="text-sm text-gray-500">Zoom: </span>
+              <UButton @click="adjustZoom(0.1)" icon="i-heroicons-plus" color="gray" variant="ghost" size="sm" />
+              <UButton @click="adjustZoom(-0.1)" icon="i-heroicons-minus" color="gray" variant="ghost" size="sm" />
+            </div>
+          </div>
+
+          <div class="relative overflow-auto bg-gray-100 rounded-lg" style="height: 75vh">
+            <div class="relative" :style="{ transform: `scale(${zoom})`, transformOrigin: 'top left' }">
+              <canvas ref="canvasRef" class="rounded-lg cursor-move" @mousedown="handleMouseDown"
+                @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp"
+                @wheel.prevent="handleWheel" />
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="text-sm text-gray-500 mb-4">
+              Drag points to adjust regions • Use mouse wheel or buttons to zoom • Move canvas by dragging empty space
+            </div>
+
+            <div class="flex justify-end space-x-4">
+              <UButton @click="showRegions = false" color="gray">
                 Cancel
               </UButton>
-              <UButton
-                @click="handleCrop"
-                :loading="cropping"
-              >
+              <UButton @click="handleCrop" :loading="cropping">
                 Crop Regions
               </UButton>
             </div>
           </div>
-        </UModal>
-      </template>
-    </div>
-  </template>
-  
-  <script setup lang="ts">
-  const props = defineProps<{
-    uuid: string
-  }>()
-  
-  const imageApi = useImageApi()
-  const loading = ref(true)
-  const detectingRegions = ref(false)
-  const cropping = ref(false)
-  const showRegions = ref(false)
-  const rotatingIndex = ref<number | null>(null)
-  const regions = ref<any[]>([])
-  const croppedImages = ref<string[]>([])
-  const canvasRef = ref<HTMLCanvasElement | null>(null)
-  
-  onMounted(async () => {
-    await loadCroppedImages()
-    loading.value = false
-  })
-  
-  const loadCroppedImages = async () => {
-    try {
-      const result = await imageApi.getCroppedImages(props.uuid)
-      croppedImages.value = result.images
-    } catch (error) {
-      console.error('Failed to load cropped images:', error)
+        </div>
+      </UModal>
+    </template>
+  </div>
+</template>
+
+<script setup lang="ts">
+const props = defineProps<{
+  uuid: string
+}>()
+
+const imageApi = useImageApi()
+const loading = ref(true)
+const detectingRegions = ref(false)
+const cropping = ref(false)
+const showRegions = ref(false)
+const rotatingIndex = ref<number | null>(null)
+const regions = ref<any[]>([])
+const croppedImages = ref<string[]>([])
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+
+// New refs for region editing
+const isDragging = ref(false)
+const selectedPoint = ref<{ regionIndex: number; pointIndex: number } | null>(null)
+const originalImage = ref<HTMLImageElement | null>(null)
+const zoom = ref(1)
+const isPanning = ref(false)
+const lastPanPoint = ref<{ x: number; y: number } | null>(null)
+const canvasContainer = ref<HTMLDivElement | null>(null)
+
+onMounted(async () => {
+  await loadCroppedImages()
+  loading.value = false
+})
+
+const loadCroppedImages = async () => {
+  try {
+    const result = await imageApi.getCroppedImages(props.uuid)
+    croppedImages.value = result.images
+  } catch (error) {
+    console.error('Failed to load cropped images:', error)
+  }
+}
+
+const detectRegions = async () => {
+  detectingRegions.value = true
+  try {
+    const result = await imageApi.getRegions(props.uuid)
+    regions.value = result.regions
+    showRegions.value = true
+    nextTick(() => {
+      drawRegions()
+    })
+  } catch (error) {
+    console.error('Region detection failed:', error)
+  } finally {
+    detectingRegions.value = false
+  }
+}
+
+const adjustZoom = (delta: number) => {
+  zoom.value = Math.max(0.1, Math.min(5, zoom.value + delta))
+  drawRegions()
+}
+
+const handleWheel = (e: WheelEvent) => {
+  const delta = e.deltaY > 0 ? -0.1 : 0.1
+  adjustZoom(delta)
+}
+
+const getCanvasPoint = (e: MouseEvent) => {
+  const canvas = canvasRef.value
+  if (!canvas) return null
+
+  const rect = canvas.getBoundingClientRect()
+  const x = (e.clientX - rect.left) / zoom.value
+  const y = (e.clientY - rect.top) / zoom.value
+  return { x, y }
+}
+
+const findNearestPoint = (point: { x: number; y: number }, threshold = 10) => {
+  for (let i = 0; i < regions.value.length; i++) {
+    const region = regions.value[i]
+    for (let j = 0; j < region.length; j++) {
+      const [x, y] = region[j]
+      const distance = Math.sqrt(
+        Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2)
+      )
+      if (distance < threshold / zoom.value) {
+        return { regionIndex: i, pointIndex: j }
+      }
     }
   }
-  
-  const detectRegions = async () => {
-    detectingRegions.value = true
-    try {
-      const result = await imageApi.getRegions(props.uuid)
-      regions.value = result.regions
-      showRegions.value = true
-      nextTick(() => {
-        drawRegions()
-      })
-    } catch (error) {
-      console.error('Region detection failed:', error)
-    } finally {
-      detectingRegions.value = false
-    }
+  return null
+}
+
+const handleMouseDown = (e: MouseEvent) => {
+  const point = getCanvasPoint(e)
+  if (!point) return
+
+  const nearest = findNearestPoint(point)
+  if (nearest) {
+    isDragging.value = true
+    selectedPoint.value = nearest
+  } else {
+    isPanning.value = true
+    lastPanPoint.value = { x: e.clientX, y: e.clientY }
   }
-  
-  const drawRegions = async () => {
-    const canvas = canvasRef.value
-    if (!canvas) return
-    
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    
-    const img = new Image()
-    img.src = imageApi.getImageUrl(props.uuid, 'original')
-    
-    img.onload = () => {
-      canvas.width = img.width
-      canvas.height = img.height
-      
-      ctx.drawImage(img, 0, 0)
-      
-      regions.value.forEach((region, index) => {
-        ctx.beginPath()
-        ctx.moveTo(region[0][0], region[0][1])
-        region.slice(1).forEach(point => {
-          ctx.lineTo(point[0], point[1])
-        })
-        ctx.closePath()
-        ctx.strokeStyle = '#00ff00'
-        ctx.lineWidth = 2
-        ctx.stroke()
-        
-        // Add region number
-        const centerX = region.reduce((sum, point) => sum + point[0], 0) / region.length
-        const centerY = region.reduce((sum, point) => sum + point[1], 0) / region.length
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  const canvas = canvasRef.value
+  if (!canvas) return
+
+  if (isDragging.value && selectedPoint.value) {
+    const point = getCanvasPoint(e)
+    if (!point) return
+
+    // Update the point position
+    const { regionIndex, pointIndex } = selectedPoint.value
+    regions.value[regionIndex][pointIndex] = [point.x, point.y]
+    drawRegions()
+  } else if (isPanning.value && lastPanPoint.value && canvasContainer.value) {
+    const dx = e.clientX - lastPanPoint.value.x
+    const dy = e.clientY - lastPanPoint.value.y
+
+    canvasContainer.value.scrollLeft -= dx
+    canvasContainer.value.scrollTop -= dy
+
+    lastPanPoint.value = { x: e.clientX, y: e.clientY }
+  }
+}
+
+const handleMouseUp = () => {
+  isDragging.value = false
+  isPanning.value = false
+  selectedPoint.value = null
+  lastPanPoint.value = null
+}
+
+const drawRegions = async () => {
+  const canvas = canvasRef.value
+  if (!canvas) return
+
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  if (!originalImage.value) {
+    originalImage.value = new Image()
+    originalImage.value.src = imageApi.getImageUrl(props.uuid, 'original')
+    originalImage.value.onload = () => drawRegionsOnCanvas(ctx, canvas)
+  } else {
+    drawRegionsOnCanvas(ctx, canvas)
+  }
+}
+
+const drawRegionsOnCanvas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+  if (!originalImage.value) return
+
+  // Set canvas size to image size
+  canvas.width = originalImage.value.width
+  canvas.height = originalImage.value.height
+
+  // Clear and draw image
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(originalImage.value, 0, 0)
+
+  // Draw regions
+  regions.value.forEach((region, index) => {
+    // Draw region outline
+    ctx.beginPath()
+    ctx.moveTo(region[0][0], region[0][1])
+
+    region.slice(1).forEach(point => {
+      ctx.lineTo(point[0], point[1])
+    })
+
+    ctx.closePath()
+    ctx.strokeStyle = '#00ff00'
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    // Draw points
+    region.forEach(([x, y], pointIndex) => {
+      ctx.beginPath()
+      ctx.arc(x, y, 5, 0, Math.PI * 2)
+
+      // Highlight selected point
+      if (selectedPoint.value?.regionIndex === index &&
+        selectedPoint.value?.pointIndex === pointIndex) {
+        ctx.fillStyle = '#ff0000'
+      } else {
         ctx.fillStyle = '#00ff00'
-        ctx.font = '20px Arial'
-        ctx.fillText((index + 1).toString(), centerX, centerY)
-      })
-    }
+      }
+
+      ctx.fill()
+    })
+
+    // Add region number
+    const centerX = region.reduce((sum, point) => sum + point[0], 0) / region.length
+    const centerY = region.reduce((sum, point) => sum + point[1], 0) / region.length
+    ctx.fillStyle = '#00ff00'
+    ctx.font = '20px Arial'
+    ctx.fillText((index + 1).toString(), centerX, centerY)
+  })
+}
+
+const handleCrop = async () => {
+  cropping.value = true
+  try {
+    await imageApi.cropRegions(props.uuid, regions.value)
+    await loadCroppedImages()
+    showRegions.value = false
+  } catch (error) {
+    console.error('Cropping failed:', error)
+  } finally {
+    cropping.value = false
   }
-  
-  const handleCrop = async () => {
-    cropping.value = true
-    try {
-      await imageApi.cropRegions(props.uuid, regions.value)
-      await loadCroppedImages()
-      showRegions.value = false
-    } catch (error) {
-      console.error('Cropping failed:', error)
-    } finally {
-      cropping.value = false
-    }
+}
+
+const rotateCropped = async (index: number) => {
+  rotatingIndex.value = index
+  try {
+    await imageApi.rotateCroppedImage(props.uuid, index)
+    croppedImages.value = [...croppedImages.value]
+  } catch (error) {
+    console.error('Rotation failed:', error)
+  } finally {
+    rotatingIndex.value = null
   }
-  
-  const rotateCropped = async (index: number) => {
-    rotatingIndex.value = index
-    try {
-      await imageApi.rotateCroppedImage(props.uuid, index)
-      // Force image refresh by adding timestamp
-      croppedImages.value = [...croppedImages.value]
-    } catch (error) {
-      console.error('Rotation failed:', error)
-    } finally {
-      rotatingIndex.value = null
-    }
-  }
+}
 </script>
-  

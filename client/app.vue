@@ -32,8 +32,8 @@
 const processedImages = ref<string[]>([])
 const imageApi = useImageApi()
 
-const handleUploadComplete = (uuids: string[]) => {
-  processedImages.value = [...uuids, ...processedImages.value]
+const handleUploadComplete = async (uuids: string[]) => {
+  processedImages.value = await imageApi.getImages()
 }
 
 // load the already existing images from the server

@@ -86,30 +86,9 @@ def detect_regions_opencv(image_path: str) -> List[List[List[float]]]:
     Detect regions in image using OpenCV
     This is a basic implementation that could be enhanced based on specific needs
     """
-    # Read image
-    img = cv2.imread(image_path)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
-    # Apply threshold
-    _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
-    
-    # Find contours
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
     regions = []
-    for contour in contours:
-        # Approximate the contour to a polygon
-        epsilon = 0.02 * cv2.arcLength(contour, True)
-        approx = cv2.approxPolyDP(contour, epsilon, True)
-        
-        # If the polygon has 4 points, consider it a region
-        if len(approx) == 4:
-            points = [[float(point[0][0]), float(point[0][1])] for point in approx]
-            regions.append(points)
-    
-    # If no regions found, return mock data
-    if not regions:
-        return mock_region_detection()
+
+    return mock_region_detection()
     
     return regions
 
@@ -192,6 +171,13 @@ async def crop_regions(uuid: str, regions_request: RegionsRequest):
     if not os.path.exists(image_path):
         raise HTTPException(status_code=404, detail="Image not found")
     
+    # Remove existing cropped images
+    dir_path = os.path.join(DATA_DIR, uuid)
+    for file in os.listdir(dir_path):
+        if file.startswith("cropped_"):
+            os.remove(os.path.join(dir_path, file))
+
+    # Crop the image based on regions
     for i, region in enumerate(regions_request.regions):
         output_path = os.path.join(DATA_DIR, uuid, f"cropped_{i}.jpg")
         crop_image(image_path, region, output_path)
