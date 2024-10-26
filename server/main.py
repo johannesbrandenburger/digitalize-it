@@ -1,13 +1,14 @@
-from typing import Union, List, Tuple
+from typing import Union, List
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 import uuid
 import os
 import shutil
 from pydantic import BaseModel
-import random  # For mocking region detection
 import cv2
 import numpy as np
+
+from opencv.functions import get_contour, four_point_transform
 
 app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
@@ -65,63 +66,29 @@ def save_image(file: UploadFile, image_uuid: str) -> str:
     
     return file_path
 
-def mock_region_detection() -> List[List[List[float]]]:
-    """Mock function for region detection"""
-    num_regions = random.randint(1, 3)
-    regions = []
-    
-    for _ in range(num_regions):
-        # Generate 4 points for a quadrilateral
-        points = []
-        for _ in range(4):
-            x = random.uniform(0, 100)
-            y = random.uniform(0, 100)
-            points.append([x, y])
-        regions.append(points)
-    
-    return regions
 
 def detect_regions_opencv(image_path: str) -> List[List[List[float]]]:
     """
-    Detect regions in image using OpenCV
-    This is a basic implementation that could be enhanced based on specific needs
+    Detect regions in image using the get_contour function
     """
-    regions = []
+    # Read the image
+    img = cv2.imread(image_path)
 
-    return mock_region_detection()
+    # Get the contour
+    contour = get_contour(img)
+
+    # Convert contour to list of lists
+    regions = [contour.tolist()]
     
     return regions
 
 def crop_image(image_path: str, region: List[List[float]], output_path: str):
-    """Crop image based on region coordinates using OpenCV"""
-    # Read the image
+    """Crop image using four_point_transform function"""
+
     img = cv2.imread(image_path)
-    
-    # Convert region points to numpy array
-    points = np.array(region, dtype=np.float32)
-    
-    # Get the bounding rectangle
-    rect = cv2.boundingRect(points.astype(np.int32))
-    x, y, w, h = rect
-    
-    # Get the minimum area rectangle
-    center, size, angle = cv2.minAreaRect(points.astype(np.int32))
-    
-    # Create source and destination points for perspective transform
-    src_points = points.astype(np.float32)
-    dst_points = np.array([[0, 0],
-                          [w - 1, 0],
-                          [w - 1, h - 1],
-                          [0, h - 1]], dtype=np.float32)
-    
-    # Get perspective transform matrix
-    matrix = cv2.getPerspectiveTransform(src_points, dst_points)
-    
-    # Do perspective transform
-    result = cv2.warpPerspective(img, matrix, (w, h))
-    
-    # Save the result
-    cv2.imwrite(output_path, result)
+    region = np.array(region)
+    cropped = four_point_transform(img, region)
+    cv2.imwrite(output_path, cropped)
 
 def rotate_image(image_path: str):
     """Rotate image 90 degrees clockwise using OpenCV"""
