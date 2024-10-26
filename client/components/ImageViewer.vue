@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div v-if="loading" class="flex justify-center">
-      <!-- <USpinner /> -->
+      <UProgress animation="carousel" />
     </div>
 
     <template v-else>
@@ -329,6 +329,14 @@ const drawRegionsOnCanvas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEl
     ctx.fillText((index + 1).toString(), centerX, centerY)
   })
 }
+
+// listen on enter key press
+window.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter' && showRegions.value) {
+    e.preventDefault()
+    handleCrop()
+  }
+})
 
 const handleCrop = async () => {
   cropping.value = true
